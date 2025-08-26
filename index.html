@@ -142,7 +142,7 @@
         <div class="time-info" id="timeInfo">
             <div>Început: <span id="startTime">--</span></div>
             <div>Final: <span id="endTime">--</span></div>
-            <div style="margin-top: 10px; font-size: 1.1rem;">Timp rămas: <span id="remainingTime">--</span></div>
+            <div style="margin-top: 10px; font-size: 1rem;">Timp rămas: <span id="remainingTime">--</span></div>
         </div>
 
         <button class="reset-button" id="resetButton">Apasă AICI, iubire!</button>
@@ -202,7 +202,7 @@
             const liquidHeight = progress * 100;
             beerLiquid.style.height = `${liquidHeight}%`;
             
-            statusMessage.innerHTML = "Răbdare... halba se umple încet! 😉";
+            statusMessage.innerHTML = "Răbdare... halba se umple încet! Trei zile stăm cuminți 😉";
             resetButton.textContent = "Resetează Pedeapsa";
             timeInfo.classList.add('active');
             startTimeEl.textContent = formatDateTime(startTime);
@@ -217,7 +217,7 @@
     function resetUI() {
         if (timerInterval) clearInterval(timerInterval);
         statusMessage.innerHTML = "Gata de o nouă provocare? 😏";
-        beerLiquid.style.height = '0%';
+        beerLiquid.style.height = '100%';
         timeInfo.classList.remove('active');
         resetButton.textContent = "Apasă AICI, iubire!";
     }
