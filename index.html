@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Beer Time 🍺</title>
+    <title>Beer time 🍺</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -82,7 +82,7 @@
             left: 0;
             right: 0;
             width: 100%;
-            height: 100%; /* Începe plin */
+            height: 0%; /* MODIFICAT: Începe gol */
             background-color: var(--beer-gold);
             transition: height 0.5s ease-out;
         }
@@ -149,9 +149,10 @@
     </div>
 
     <script>
-        const DURATION_IN_HOURS = 72; // 3 zile
+        // --- MODIFICĂRI AICI ---
+        const DURATION_IN_HOURS = 60; // Durata schimbată la 60 de ore
         const DURATION_IN_MS = DURATION_IN_HOURS * 60 * 60 * 1000;
-        const API_URL = '/api/timer'; // Vercel știe să ruteze asta către funcția serverless
+        const API_URL = '/api/timer';
 
         // Referințe DOM
         const statusMessage = document.getElementById('statusMessage');
@@ -168,6 +169,7 @@
             return new Date(timestamp).toLocaleString('ro-RO', { dateStyle: 'medium', timeStyle: 'short' });
         }
         
+        // --- MODIFICAT: Funcția afișează acum și secundele ---
         function formatRemainingTime(ms) {
             let totalSeconds = Math.floor(ms / 1000);
             let days = Math.floor(totalSeconds / 86400);
@@ -175,8 +177,9 @@
             let hours = Math.floor(totalSeconds / 3600);
             totalSeconds %= 3600;
             let minutes = Math.floor(totalSeconds / 60);
+            let seconds = totalSeconds % 60; // Adăugat calculul pentru secunde
             
-            return `${days}z ${hours}h ${minutes}m`;
+            return `${days}z ${hours}h ${minutes}m ${seconds}s`;
         }
 
         function updateUI(startTime) {
@@ -187,6 +190,7 @@
                 const endTime = startTime + DURATION_IN_MS;
 
                 if (now >= endTime) {
+                    alert("Timpul a expirat! Ai liber la bere! 🍻");
                     resetUI();
                     return;
                 }
@@ -195,11 +199,12 @@
                 const progress = elapsed / DURATION_IN_MS;
                 const remainingMs = endTime - now;
 
-                // Halba se golește, deci înălțimea lichidului = 100% - progres
-                const liquidHeight = 100 - (progress * 100);
+                // --- MODIFICAT: Logica progresului este inversată ---
+                // Halba se umple pe măsură ce timpul trece
+                const liquidHeight = progress * 100;
                 beerLiquid.style.height = `${liquidHeight}%`;
                 
-                statusMessage.innerHTML = "Trei zile stăm cuminți... 😇";
+                statusMessage.innerHTML = "Răbdare... halba se umple încet! 😉";
                 resetButton.textContent = "Resetează Pedeapsa";
                 timeInfo.classList.add('active');
                 startTimeEl.textContent = formatDateTime(startTime);
@@ -207,14 +212,14 @@
                 remainingTimeEl.textContent = formatRemainingTime(remainingMs);
             };
             
-            tick(); // Rulează o dată imediat
-            timerInterval = setInterval(tick, 1000); // Apoi la fiecare secundă
+            tick();
+            timerInterval = setInterval(tick, 1000);
         }
 
         function resetUI() {
             if (timerInterval) clearInterval(timerInterval);
-            statusMessage.innerHTML = "Felicitări, ai liber la bere! 🍻";
-            beerLiquid.style.height = '100%';
+            statusMessage.innerHTML = "Gata de o nouă provocare? 😏";
+            beerLiquid.style.height = '0%'; // Halba stă goală în starea de repaus
             timeInfo.classList.remove('active');
             resetButton.textContent = "Apasă AICI, iubire!";
         }
