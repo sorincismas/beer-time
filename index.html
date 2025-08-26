@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beer Time 🍺</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #FFFBEB; /* Crem deschis */
+            --beer-gold: #FBBF24; /* Auriu bere */
+            --foam-white: #FFFFFF;
+            --text-dark: #78350F; /* Maro închis */
+            --button-red: #EF4444;
+            --button-red-hover: #DC2626;
+            --button-green: #22C55E;
+            --font-title: 'Bangers', cursive;
+            --font-body: 'Poppins', sans-serif;
+        }
+        body {
+            margin: 0;
+            font-family: var(--font-body);
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background: linear-gradient(145deg, #fff, #f1e7d0);
+            padding: 30px 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h1 {
+            font-family: var(--font-title);
+            color: var(--text-dark);
+            font-size: 3.5rem;
+            margin: 0 0 10px;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+        .status-message {
+            font-size: 1.1rem;
+            min-height: 40px;
+            font-weight: 600;
+        }
+        .beer-container {
+            margin: 30px auto;
+            width: 150px;
+            height: 200px;
+            position: relative;
+        }
+        .beer-svg {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            z-index: 2;
+        }
+        .beer-liquid-container {
+            position: absolute;
+            bottom: 12%; /* Aliniat cu fundul halbei */
+            left: 12%;
+            right: 32%;
+            height: 70%; /* Înălțimea maximă a lichidului */
+            background-color: #fde68a;
+            border-radius: 0 0 10px 10px;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .beer-liquid {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: 100%; /* Începe plin */
+            background-color: var(--beer-gold);
+            transition: height 0.5s ease-out;
+        }
+        .time-info {
+            font-size: 0.9rem;
+            background-color: rgba(251, 191, 36, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            display: none; /* Ascuns inițial */
+        }
+        .time-info.active { display: block; }
+        .time-info div { margin-bottom: 5px; }
+        .time-info span { font-weight: 600; }
+        .reset-button {
+            background-color: var(--button-red);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-family: var(--font-body);
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s;
+            width: 100%;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+        }
+        .reset-button:hover {
+            background-color: var(--button-red-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(220, 38, 38, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Fără Bere!</h1>
+        <p class="status-message" id="statusMessage">Verificăm starea...</p>
+
+        <div class="beer-container">
+            <div class="beer-liquid-container">
+                <div class="beer-liquid" id="beerLiquid"></div>
+            </div>
+            <svg class="beer-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <!-- Spuma -->
+                <path d="M10,20 Q15,10 25,20 T45,20 T65,20 T80,15" fill="none" stroke="white" stroke-width="5" stroke-linecap="round"/>
+                <path d="M15,25 Q20,15 30,25 T50,25 T70,25 T85,20" fill="none" stroke="white" stroke-width="6" stroke-linecap="round"/>
+                <!-- Halba -->
+                <path d="M10,25 C0,30 0,80 10,90 H70 C80,80 80,30 70,25 Z" fill="none" stroke="#78350F" stroke-width="3" />
+                <!-- Mâner -->
+                <path d="M70,40 C90,45 90,75 70,80" fill="none" stroke="#78350F" stroke-width="3" />
+            </svg>
+        </div>
+
+        <div class="time-info" id="timeInfo">
+            <div>Început: <span id="startTime">--</span></div>
+            <div>Final: <span id="endTime">--</span></div>
+            <div style="margin-top: 10px; font-size: 1.1rem;">Timp rămas: <span id="remainingTime">--</span></div>
+        </div>
+
+        <button class="reset-button" id="resetButton">Apasă AICI, iubire!</button>
+    </div>
+
+    <script>
+        const DURATION_IN_HOURS = 72; // 3 zile
+        const DURATION_IN_MS = DURATION_IN_HOURS * 60 * 60 * 1000;
+        const API_URL = '/api/timer'; // Vercel știe să ruteze asta către funcția serverless
+
+        // Referințe DOM
+        const statusMessage = document.getElementById('statusMessage');
+        const beerLiquid = document.getElementById('beerLiquid');
+        const timeInfo = document.getElementById('timeInfo');
+        const startTimeEl = document.getElementById('startTime');
+        const endTimeEl = document.getElementById('endTime');
+        const remainingTimeEl = document.getElementById('remainingTime');
+        const resetButton = document.getElementById('resetButton');
+
+        let timerInterval = null;
+
+        function formatDateTime(timestamp) {
+            return new Date(timestamp).toLocaleString('ro-RO', { dateStyle: 'medium', timeStyle: 'short' });
+        }
+        
+        function formatRemainingTime(ms) {
+            let totalSeconds = Math.floor(ms / 1000);
+            let days = Math.floor(totalSeconds / 86400);
+            totalSeconds %= 86400;
+            let hours = Math.floor(totalSeconds / 3600);
+            totalSeconds %= 3600;
+            let minutes = Math.floor(totalSeconds / 60);
+            
+            return `${days}z ${hours}h ${minutes}m`;
+        }
+
+        function updateUI(startTime) {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            const tick = () => {
+                const now = new Date().getTime();
+                const endTime = startTime + DURATION_IN_MS;
+
+                if (now >= endTime) {
+                    resetUI();
+                    return;
+                }
+
+                const elapsed = now - startTime;
+                const progress = elapsed / DURATION_IN_MS;
+                const remainingMs = endTime - now;
+
+                // Halba se golește, deci înălțimea lichidului = 100% - progres
+                const liquidHeight = 100 - (progress * 100);
+                beerLiquid.style.height = `${liquidHeight}%`;
+                
+                statusMessage.innerHTML = "Trei zile stăm cuminți... 😇";
+                resetButton.textContent = "Resetează Pedeapsa";
+                timeInfo.classList.add('active');
+                startTimeEl.textContent = formatDateTime(startTime);
+                endTimeEl.textContent = formatDateTime(endTime);
+                remainingTimeEl.textContent = formatRemainingTime(remainingMs);
+            };
+            
+            tick(); // Rulează o dată imediat
+            timerInterval = setInterval(tick, 1000); // Apoi la fiecare secundă
+        }
+
+        function resetUI() {
+            if (timerInterval) clearInterval(timerInterval);
+            statusMessage.innerHTML = "Felicitări, ai liber la bere! 🍻";
+            beerLiquid.style.height = '100%';
+            timeInfo.classList.remove('active');
+            resetButton.textContent = "Apasă AICI, iubire!";
+        }
+
+        async function initialize() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                if (data.startTime) {
+                    updateUI(data.startTime);
+                } else {
+                    resetUI();
+                }
+            } catch (error) {
+                statusMessage.textContent = "Eroare de conectare.";
+            }
+        }
+
+        resetButton.addEventListener('click', async () => {
+            resetButton.disabled = true;
+            resetButton.textContent = "Se aplică...";
+            try {
+                const response = await fetch(API_URL, { method: 'POST' });
+                const data = await response.json();
+                if (data.startTime) {
+                    updateUI(data.startTime);
+                }
+            } catch (error) {
+                alert("Hopa! Ceva nu a mers. Mai încearcă o dată.");
+            } finally {
+                resetButton.disabled = false;
+            }
+        });
+
+        // Start
+        initialize();
+    </script>
+</body>
+</html>
