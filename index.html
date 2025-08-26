@@ -149,113 +149,125 @@
     </div>
 
     <script>
-        // --- MODIFICĂRI AICI ---
-        const DURATION_IN_HOURS = 60; // Durata schimbată la 60 de ore
-        const DURATION_IN_MS = DURATION_IN_HOURS * 60 * 60 * 1000;
-        const API_URL = '/api/timer';
+    const DURATION_IN_HOURS = 60;
+    const DURATION_IN_MS = DURATION_IN_HOURS * 60 * 60 * 1000;
+    const API_URL = '/api/timer';
 
-        // Referințe DOM
-        const statusMessage = document.getElementById('statusMessage');
-        const beerLiquid = document.getElementById('beerLiquid');
-        const timeInfo = document.getElementById('timeInfo');
-        const startTimeEl = document.getElementById('startTime');
-        const endTimeEl = document.getElementById('endTime');
-        const remainingTimeEl = document.getElementById('remainingTime');
-        const resetButton = document.getElementById('resetButton');
+    // Referințe DOM (rămân neschimbate)
+    const statusMessage = document.getElementById('statusMessage');
+    const beerLiquid = document.getElementById('beerLiquid');
+    const timeInfo = document.getElementById('timeInfo');
+    const startTimeEl = document.getElementById('startTime');
+    const endTimeEl = document.getElementById('endTime');
+    const remainingTimeEl = document.getElementById('remainingTime');
+    const resetButton = document.getElementById('resetButton');
 
-        let timerInterval = null;
+    let timerInterval = null;
 
-        function formatDateTime(timestamp) {
-            return new Date(timestamp).toLocaleString('ro-RO', { dateStyle: 'medium', timeStyle: 'short' });
+    // Funcțiile de formatare (rămân neschimbate)
+    function formatDateTime(timestamp) {
+        return new Date(timestamp).toLocaleString('ro-RO', { dateStyle: 'medium', timeStyle: 'short' });
+    }
+    
+    function formatRemainingTime(ms) {
+        let totalSeconds = Math.floor(ms / 1000);
+        let days = Math.floor(totalSeconds / 86400);
+        totalSeconds %= 86400;
+        let hours = Math.floor(totalSeconds / 3600);
+        totalSeconds %= 3600;
+        let minutes = Math.floor(totalSeconds / 60);
+        let seconds = totalSeconds % 60;
+        
+        return `${days}z ${hours}h ${minutes}m ${seconds}s`;
+    }
+
+    // Funcțiile de UI (rămân neschimbate)
+    function updateUI(startTime) {
+        if (timerInterval) clearInterval(timerInterval);
+        
+        const tick = () => {
+            const now = new Date().getTime();
+            const endTime = startTime + DURATION_IN_MS;
+
+            if (now >= endTime) {
+                alert("Timpul a expirat! Ai liber la bere! 🍻");
+                resetUI();
+                return;
+            }
+
+            const elapsed = now - startTime;
+            const progress = elapsed / DURATION_IN_MS;
+            const remainingMs = endTime - now;
+
+            const liquidHeight = progress * 100;
+            beerLiquid.style.height = `${liquidHeight}%`;
+            
+            statusMessage.innerHTML = "Răbdare... halba se umple încet! 😉";
+            resetButton.textContent = "Resetează Pedeapsa";
+            timeInfo.classList.add('active');
+            startTimeEl.textContent = formatDateTime(startTime);
+            endTimeEl.textContent = formatDateTime(endTime);
+            remainingTimeEl.textContent = formatRemainingTime(remainingMs);
+        };
+        
+        tick();
+        timerInterval = setInterval(tick, 1000);
+    }
+
+    function resetUI() {
+        if (timerInterval) clearInterval(timerInterval);
+        statusMessage.innerHTML = "Gata de o nouă provocare? 😏";
+        beerLiquid.style.height = '0%';
+        timeInfo.classList.remove('active');
+        resetButton.textContent = "Apasă AICI, iubire!";
+    }
+
+    async function initialize() {
+        try {
+            const response = await fetch(API_URL);
+            const data = await response.json();
+            if (data.startTime) {
+                updateUI(data.startTime);
+            } else {
+                resetUI();
+            }
+        } catch (error) {
+            statusMessage.textContent = "Eroare de conectare.";
+        }
+    }
+
+    // --- MODIFICARE AICI ---
+    resetButton.addEventListener('click', async () => {
+        // Pas 1: Verificăm dacă un timer este deja activ
+        const isTimerActive = timeInfo.classList.contains('active');
+        
+        // Pas 2: Dacă este activ, cerem confirmare
+        if (isTimerActive) {
+            const userConfirmed = confirm("Ești sigur/ă că vrei să resetezi? Pedeapsa reîncepe de la zero!");
+            // Dacă utilizatorul apasă "Cancel", ieșim din funcție și nu facem nimic
+            if (!userConfirmed) {
+                return; 
+            }
         }
         
-        // --- MODIFICAT: Funcția afișează acum și secundele ---
-        function formatRemainingTime(ms) {
-            let totalSeconds = Math.floor(ms / 1000);
-            let days = Math.floor(totalSeconds / 86400);
-            totalSeconds %= 86400;
-            let hours = Math.floor(totalSeconds / 3600);
-            totalSeconds %= 3600;
-            let minutes = Math.floor(totalSeconds / 60);
-            let seconds = totalSeconds % 60; // Adăugat calculul pentru secunde
-            
-            return `${days}z ${hours}h ${minutes}m ${seconds}s`;
-        }
-
-        function updateUI(startTime) {
-            if (timerInterval) clearInterval(timerInterval);
-            
-            const tick = () => {
-                const now = new Date().getTime();
-                const endTime = startTime + DURATION_IN_MS;
-
-                if (now >= endTime) {
-                    alert("Timpul a expirat! Ai liber la bere! 🍻");
-                    resetUI();
-                    return;
-                }
-
-                const elapsed = now - startTime;
-                const progress = elapsed / DURATION_IN_MS;
-                const remainingMs = endTime - now;
-
-                // --- MODIFICAT: Logica progresului este inversată ---
-                // Halba se umple pe măsură ce timpul trece
-                const liquidHeight = progress * 100;
-                beerLiquid.style.height = `${liquidHeight}%`;
-                
-                statusMessage.innerHTML = "Răbdare... halba se umple încet! 😉";
-                resetButton.textContent = "Resetează Pedeapsa";
-                timeInfo.classList.add('active');
-                startTimeEl.textContent = formatDateTime(startTime);
-                endTimeEl.textContent = formatDateTime(endTime);
-                remainingTimeEl.textContent = formatRemainingTime(remainingMs);
-            };
-            
-            tick();
-            timerInterval = setInterval(tick, 1000);
-        }
-
-        function resetUI() {
-            if (timerInterval) clearInterval(timerInterval);
-            statusMessage.innerHTML = "Gata de o nouă provocare? 😏";
-            beerLiquid.style.height = '0%'; // Halba stă goală în starea de repaus
-            timeInfo.classList.remove('active');
-            resetButton.textContent = "Apasă AICI, iubire!";
-        }
-
-        async function initialize() {
-            try {
-                const response = await fetch(API_URL);
-                const data = await response.json();
-                if (data.startTime) {
-                    updateUI(data.startTime);
-                } else {
-                    resetUI();
-                }
-            } catch (error) {
-                statusMessage.textContent = "Eroare de conectare.";
+        // Pas 3: Doar dacă nu era un timer activ SAU dacă utilizatorul a confirmat, continuăm
+        resetButton.disabled = true;
+        resetButton.textContent = "Se aplică...";
+        try {
+            const response = await fetch(API_URL, { method: 'POST' });
+            const data = await response.json();
+            if (data.startTime) {
+                updateUI(data.startTime);
             }
+        } catch (error) {
+            alert("Hopa! Ceva nu a mers. Mai încearcă o dată.");
+        } finally {
+            resetButton.disabled = false;
         }
+    });
 
-        resetButton.addEventListener('click', async () => {
-            resetButton.disabled = true;
-            resetButton.textContent = "Se aplică...";
-            try {
-                const response = await fetch(API_URL, { method: 'POST' });
-                const data = await response.json();
-                if (data.startTime) {
-                    updateUI(data.startTime);
-                }
-            } catch (error) {
-                alert("Hopa! Ceva nu a mers. Mai încearcă o dată.");
-            } finally {
-                resetButton.disabled = false;
-            }
-        });
-
-        // Start
-        initialize();
-    </script>
+    // Start
+    initialize();
+</script>
 </body>
 </html>
